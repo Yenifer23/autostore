@@ -1,0 +1,21 @@
+# Archivos de compilación de Java
+*.class
+*.jar
+*.war
+/build/
+/target/
+
+# Configuraciones del IDE
+.vscode/
+.idea/
+
+# Archivos de la máquina virtual de Java
+*.log
+*.swp
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de datos sensibles
+.env
