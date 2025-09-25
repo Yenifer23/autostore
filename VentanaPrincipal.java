@@ -28,7 +28,7 @@ public class VentanaPrincipal extends JFrame {
             ImageIcon iconLogo = new ImageIcon(RUTA_LOGO);
             labelLogo = new JLabel(iconLogo);
         } else {
-            labelLogo = new JLabel("auto STORE", SwingConstants.CENTER);
+            labelLogo = new JLabel("AUTO STORE", SwingConstants.CENTER);
             labelLogo.setFont(new Font("Arial", Font.BOLD, 48));
             labelLogo.setForeground(Color.WHITE);
         }
