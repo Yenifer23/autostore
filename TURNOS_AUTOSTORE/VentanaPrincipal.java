@@ -242,4 +242,4 @@ class BackgroundPanel extends JPanel {
     }
 }
 
-Comentario de prueba c:
+//Comentario de prueba c:
