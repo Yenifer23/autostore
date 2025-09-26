@@ -10,7 +10,7 @@ public class VentanaPrincipal extends JFrame {
     private static final String RUTA_LOGO = "imagenes/logo_autostore.png";
 
     public VentanaPrincipal() {
-        setTitle("Sistema de Turnos - Auto STORE!!!");
+        setTitle("Sistema de Turnos - Auto STORE!");
         setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
