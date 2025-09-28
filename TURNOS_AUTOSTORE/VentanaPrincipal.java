@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import TURNOS_AUTOSTORE.LoginApp;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -277,9 +278,14 @@ public class VentanaPrincipal extends JFrame {
         btnAgendarNuevoTurno.setOpaque(false);
         btnAgendarNuevoTurno.setBorder(BorderFactory.createEmptyBorder(15, 40, 15, 40));
 
-        btnAgendarNuevoTurno.addActionListener(e ->
-                JOptionPane.showMessageDialog(VentanaPrincipal.this, "Has hecho clic en AGENDAR NUEVO TURNO")
-        );
+        //MODIFIQUE ESTA PARTE PARA QUE DIRECTAMENTE ABRA LA PARTE DE LOGIN, LO DEJO ACÁ POR LAS DUDAS
+        //btnAgendarNuevoTurno.addActionListener(e ->
+        //        JOptionPane.showMessageDialog(VentanaPrincipal.this, "Has hecho clic en AGENDAR NUEVO TURNO")
+        //);
+
+        btnAgendarNuevoTurno.addActionListener(e -> {
+        new LoginApp(); // abre la ventana de login
+        });
 
         BotonWrapperPanel panelBotonWrapper = new BotonWrapperPanel();
         panelBotonWrapper.add(btnAgendarNuevoTurno);
