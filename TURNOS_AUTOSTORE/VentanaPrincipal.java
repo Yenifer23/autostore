@@ -10,7 +10,7 @@ import TURNOS_AUTOSTORE.LoginApp;
 public class VentanaPrincipal extends JFrame {
 
     // --- RUTAS DE IMAGENES (ahora relativas) ---
-    private static final String RUTA_LOGO_NUEVO = "/Imagenes/logo2.png";
+    private static final String RUTA_LOGO_NUEVO = "/Imagenes/logonuevo25.png";
 
     // --- COLORES DEFINIDOS ---
     private static final Color COLOR_NEON_VERDE = new Color(57, 255, 20); // Verde neón principal
