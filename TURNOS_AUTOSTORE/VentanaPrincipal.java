@@ -2,7 +2,6 @@ package TURNOS_AUTOSTORE;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -10,9 +9,8 @@ import TURNOS_AUTOSTORE.LoginApp;
 
 public class VentanaPrincipal extends JFrame {
 
-    // --- RUTAS DE IMAGENES ---
-    private static final String RUTA_LOGO_NUEVO = "C:\\Users\\yenif\\OneDrive\\Documentos\\2025\\programar\\TURNOS_AUTOSTORE\\Imagenes\\logo2.png";
-    private static final String RUTA_ICONO_MAXIMIZAR = "imagenes/icono_maximizar.png";
+    // --- RUTAS DE IMAGENES (ahora relativas) ---
+    private static final String RUTA_LOGO_NUEVO = "/Imagenes/logo2.png";
 
     // --- COLORES DEFINIDOS ---
     private static final Color COLOR_NEON_VERDE = new Color(57, 255, 20); // Verde neón principal
@@ -159,15 +157,13 @@ public class VentanaPrincipal extends JFrame {
         labelLogo = new JLabel();
         boolean logoCargado = false;
 
-        if (new File(RUTA_LOGO_NUEVO).exists()) {
-            try {
-                ImageIcon iconLogo = new ImageIcon(RUTA_LOGO_NUEVO);
-                Image imgLogo = iconLogo.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                labelLogo.setIcon(new ImageIcon(imgLogo));
-                logoCargado = true;
-            } catch (Exception e) {
-                System.err.println("Error al procesar la imagen del logo: " + e.getMessage());
-            }
+        try {
+            ImageIcon iconLogo = new ImageIcon(getClass().getResource(RUTA_LOGO_NUEVO));
+            Image imgLogo = iconLogo.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+            labelLogo.setIcon(new ImageIcon(imgLogo));
+            logoCargado = true;
+        } catch (Exception e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
         }
 
         if (!logoCargado) {
