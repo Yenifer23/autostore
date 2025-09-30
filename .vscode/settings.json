@@ -1,0 +1,7 @@
+{
+    "java.project.sourcePaths": [
+        "TURNOS_AUTOSTORE/src/main/resources",
+        "TURNOS_AUTOSTORE"
+    ],
+    "java.project.referencedLibraries": []
+}

@@ -1,11 +1,10 @@
-package TURNOS_AUTOSTORE;
+
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import TURNOS_AUTOSTORE.LoginApp; //esta parte no se si esta bien 
 
 public class VentanaPrincipal extends JFrame {
 
@@ -234,6 +233,12 @@ public class VentanaPrincipal extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new VentanaPrincipal());
+    try {
+        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+    }   catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+    SwingUtilities.invokeLater(() -> new VentanaPrincipal());
     }
 }
