@@ -2,8 +2,6 @@ package TURNOS_AUTOSTORE;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -11,21 +9,12 @@ import TURNOS_AUTOSTORE.LoginApp; //esta parte no se si esta bien
 
 public class VentanaPrincipal extends JFrame {
 
-    // --- RUTAS DE IMAGENES (¡VERIFICA ESTA RUTA EN TU PC!) ---
-    private static final String RUTA_LOGO_NUEVO = "C:\\Users\\yenif\\OneDrive\\Documentos\\2025\\programar\\TURNOS_AUTOSTORE\\Imagenes\\logo2.png";
-    private static final String RUTA_ICONO_MAXIMIZAR = "imagenes/icono_maximizar.png";
+    // --- RUTAS DE IMAGENES (ahora relativas) ---
+    private static final String RUTA_LOGO_NUEVO = "/Imagenes/logonuevo25.png";
 
     // --- COLORES DEFINIDOS ---
     private static final Color COLOR_NEON_VERDE = new Color(57, 255, 20); // Verde neón principal
     private static final Color COLOR_GRIS_CARBON = new Color(26, 26, 26);
-    private static final Color COLOR_TEXTO_NORMAL_BOTON = COLOR_GRIS_CARBON;
-    private static final Color COLOR_TEXTO_HOVER_BOTON = Color.WHITE;
-
-    // NUEVOS COLORES PARA EL BOTÓN ESTILO CRISTALINO/BRILLANTE
-    private static final Color COLOR_VERDE_CLARO_BRILLO = new Color(144, 255, 144); // Parte superior degradado
-    private static final Color COLOR_VERDE_OSCURO_BRILLO = new Color(0, 200, 0);    // Parte inferior degradado
-    private static final Color COLOR_BORDE_CLARO_BOTON = new Color(200, 255, 200, 180);
-    private static final Color COLOR_BORDE_OSCURO_BOTON = new Color(0, 120, 0);
 
     // Referencias para la animación y el logo
     private NeonBackgroundPanel panelPrincipal;
@@ -148,82 +137,6 @@ public class VentanaPrincipal extends JFrame {
     }
 
     // =======================================================================
-    // CLASE INTERNA 2: BotonWrapperPanel (Caja del botón estilo brillante/3D)
-    // =======================================================================
-    private class BotonWrapperPanel extends JPanel {
-        private boolean isHovering = false;
-
-        public BotonWrapperPanel() {
-            super(new GridBagLayout());
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int w = getWidth();
-            int h = getHeight();
-            int arc = 30;
-
-            LinearGradientPaint lgp = new LinearGradientPaint(
-                    0, 0, 0, h,
-                    new float[]{0.0f, 0.5f, 1.0f},
-                    new Color[]{COLOR_VERDE_CLARO_BRILLO, COLOR_NEON_VERDE, COLOR_VERDE_OSCURO_BRILLO}
-            );
-
-            if (isHovering) {
-                lgp = new LinearGradientPaint(
-                        0, 0, 0, h,
-                        new float[]{0.0f, 0.5f, 1.0f},
-                        new Color[]{COLOR_VERDE_CLARO_BRILLO.brighter(), COLOR_NEON_VERDE.brighter(), COLOR_VERDE_OSCURO_BRILLO.brighter()}
-                );
-            }
-
-            g2d.setPaint(lgp);
-            g2d.fillRoundRect(0, 0, w, h, arc, arc);
-
-            // 💡 EFECTO GLOSSY (reflejo en la parte superior)
-            GradientPaint gloss = new GradientPaint(
-                    0, 0, new Color(255, 255, 255, 150),
-                    0, h / 2, new Color(255, 255, 255, 0)
-            );
-            g2d.setPaint(gloss);
-            g2d.fillRoundRect(5, 5, w - 10, h / 2, arc, arc);
-
-            g2d.dispose();
-        }
-
-        @Override
-        protected void paintBorder(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int w = getWidth();
-            int h = getHeight();
-            int arc = 30;
-
-            g2d.setColor(COLOR_BORDE_OSCURO_BOTON);
-            g2d.setStroke(new BasicStroke(2));
-            g2d.drawRoundRect(1, 1, w - 3, h - 3, arc, arc);
-
-            g2d.setColor(COLOR_BORDE_CLARO_BOTON);
-            g2d.setStroke(new BasicStroke(2));
-            g2d.drawLine(arc, 2, w - arc - 1, 2);
-            g2d.drawArc(1, 1, arc * 2, arc * 2, 90, 90);
-            g2d.drawArc(w - (arc * 2) - 1, 1, arc * 2, arc * 2, 0, 90);
-
-            g2d.dispose();
-        }
-
-        public void setHovering(boolean h) {
-            isHovering = h;
-            repaint();
-        }
-    }
-
-    // =======================================================================
     // VENTANA PRINCIPAL
     // =======================================================================
     public VentanaPrincipal() {
@@ -244,15 +157,13 @@ public class VentanaPrincipal extends JFrame {
         labelLogo = new JLabel();
         boolean logoCargado = false;
 
-        if (new File(RUTA_LOGO_NUEVO).exists()) {
-            try {
-                ImageIcon iconLogo = new ImageIcon(RUTA_LOGO_NUEVO);
-                Image imgLogo = iconLogo.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                labelLogo.setIcon(new ImageIcon(imgLogo));
-                logoCargado = true;
-            } catch (Exception e) {
-                System.err.println("Error al procesar la imagen del logo: " + e.getMessage());
-            }
+        try {
+            ImageIcon iconLogo = new ImageIcon(getClass().getResource(RUTA_LOGO_NUEVO));
+            Image imgLogo = iconLogo.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+            labelLogo.setIcon(new ImageIcon(imgLogo));
+            logoCargado = true;
+        } catch (Exception e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
         }
 
         if (!logoCargado) {
@@ -270,39 +181,38 @@ public class VentanaPrincipal extends JFrame {
 
         gbc.weighty = 0;
 
-        // --- Botón ---
-        JButton btnAgendarNuevoTurno = new JButton("Agendar Nuevo Turno");
-        btnAgendarNuevoTurno.setFont(new Font("Arial", Font.BOLD, 22));
-        btnAgendarNuevoTurno.setForeground(COLOR_TEXTO_NORMAL_BOTON);
-        btnAgendarNuevoTurno.setFocusPainted(false);
-        btnAgendarNuevoTurno.setOpaque(false);
-        btnAgendarNuevoTurno.setBorder(BorderFactory.createEmptyBorder(15, 40, 15, 40));
+        // --- Botón personalizado ---
+        JButton btnAgendarNuevoTurno = new JButton("Agendar Nuevo Turno") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        //MODIFIQUE ESTA PARTE PARA QUE DIRECTAMENTE ABRA LA PARTE DE LOGIN, LO DEJO ACÁ POR LAS DUDAS
-        //btnAgendarNuevoTurno.addActionListener(e ->
-        //        JOptionPane.showMessageDialog(VentanaPrincipal.this, "Has hecho clic en AGENDAR NUEVO TURNO")
-        //);
+                // Fondo redondeado
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
+
+                // Texto centrado
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setColor(getForeground());
+                g2.drawString(getText(), x, y);
+
+                g2.dispose();
+            }
+        };
+
+        btnAgendarNuevoTurno.setFont(new Font("Bell MT", Font.BOLD, 20));
+        btnAgendarNuevoTurno.setForeground(Color.BLACK);
+        btnAgendarNuevoTurno.setBackground(new Color(57, 255, 20)); // Verde neón sólido
+        btnAgendarNuevoTurno.setFocusPainted(false);
+        btnAgendarNuevoTurno.setBorderPainted(false);
+        btnAgendarNuevoTurno.setContentAreaFilled(false);
+        btnAgendarNuevoTurno.setPreferredSize(new Dimension(260, 90));
 
         btnAgendarNuevoTurno.addActionListener(e -> {
-        new LoginApp(); // abre la ventana de login
-        });
-
-        BotonWrapperPanel panelBotonWrapper = new BotonWrapperPanel();
-        panelBotonWrapper.add(btnAgendarNuevoTurno);
-
-        btnAgendarNuevoTurno.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btnAgendarNuevoTurno.setForeground(COLOR_TEXTO_HOVER_BOTON);
-                panelBotonWrapper.setHovering(true);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btnAgendarNuevoTurno.setForeground(COLOR_TEXTO_NORMAL_BOTON);
-                panelBotonWrapper.setHovering(false);
-                panelBotonWrapper.repaint();
-            }
+            new LoginApp(); // abre la ventana de login
         });
 
         gbc.gridx = 0;
@@ -310,7 +220,7 @@ public class VentanaPrincipal extends JFrame {
         gbc.weighty = 0.5;
         gbc.anchor = GridBagConstraints.NORTH;
         gbc.insets = new Insets(50, 10, 10, 10);
-        panelPrincipal.add(panelBotonWrapper, gbc);
+        panelPrincipal.add(btnAgendarNuevoTurno, gbc);
 
         setVisible(true);
 
