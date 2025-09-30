@@ -7,7 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import TURNOS_AUTOSTORE.LoginApp;
+import TURNOS_AUTOSTORE.LoginApp; //esta parte no se si esta bien 
 
 public class VentanaPrincipal extends JFrame {
 
