@@ -1,7 +1,10 @@
 {
     "java.project.sourcePaths": [
-        "TURNOS_AUTOSTORE/src/main/resources",
-        "TURNOS_AUTOSTORE"
+        "TURNOS_AUTOSTORE",
+        "TURNOS_AUTOSTORE\\src\\main\\resources"
     ],
-    "java.project.referencedLibraries": []
+    "java.project.referencedLibraries": [
+        "c:\\Users\\ximen\\Downloads\\LGoodDatePicker-11.2.1.jar"
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
