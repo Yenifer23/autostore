@@ -317,7 +317,7 @@ public class ServiciosVentana extends JFrame {
         // --- LISTA DE SERVICIOS ---
         
         // 1. Audio (Tamaño 60)
-        Icon iconAudio = loadIcon("/Imagenes/parlantes2025.png", 60); 
+        Icon iconAudio = loadIcon("/Imagenes/parlantes2025.png", 80); 
         ServiceCardPanel cardAudio = new ServiceCardPanel(
             "Audio y Multimedia", 
             "Instalación y configuración de equipos de sonido, pantallas, GPS, etc.", 

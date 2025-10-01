@@ -187,8 +187,11 @@ public class LoginApp extends JFrame {
         String password = new String(txtPassword.getPassword());
 
         if (correo.equals("autostore@gmail.com") && password.equals("autostore123")) {
-            JOptionPane.showMessageDialog(this, "✅ Puedes Agendar un Nuevo Turno");
-            dispose();
+            // ✅ Credenciales correctas: abrir la ventana de servicios
+            SwingUtilities.invokeLater(() -> {
+                new ServiciosVentana(); // Crea y muestra la nueva ventana
+            });
+            dispose(); // Cierra la ventana de login
         } else {
             JOptionPane.showMessageDialog(this, "❌ Credenciales incorrectas", "Error", JOptionPane.ERROR_MESSAGE);
         }
