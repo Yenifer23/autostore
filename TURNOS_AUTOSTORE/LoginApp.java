@@ -189,7 +189,7 @@ public class LoginApp extends JFrame {
         if (correo.equals("autostore@gmail.com") && password.equals("autostore123")) {
             // ✅ Credenciales correctas: abrir la ventana de servicios
             SwingUtilities.invokeLater(() -> {
-                new ServiciosVentana(); // Crea y muestra la nueva ventana
+                new Turno(); // Crea y muestra la nueva ventana
             });
             dispose(); // Cierra la ventana de login
         } else {
