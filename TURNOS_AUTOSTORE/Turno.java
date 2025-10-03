@@ -5,14 +5,14 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.util.Random;
+
 import javax.swing.Timer;
 import javax.swing.plaf.basic.BasicButtonUI;
 import com.toedter.calendar.JDateChooser;
 
 public class Turno extends JFrame {
 
-    // --- COLORES DEFINIDOS (copiados de ServiciosVentana.java) ---
+    // --- COLORES DEFINIDOS ---
     private static final Color COLOR_NEON_VERDE = new Color(57, 255, 20);
     private static final Color COLOR_NEON_VERDE_CLARO = new Color(102, 255, 127);
     private static final Color COLOR_NEON_VERDE_OSCURO = new Color(34, 139, 34);
@@ -30,11 +30,35 @@ public class Turno extends JFrame {
     private JComboBox<String> horaComboBox;
     private JComboBox<String> servicioComboBox;
 
-    // Panel principal con fondo animado (igual que en ServiciosVentana.java)
+    // Panel principal con fondo animado
     private NeonBackgroundPanel panelPrincipal;
 
+    // --- NUEVO: Para manejar los pasos ---
+    private CardLayout cardLayout;
+    private JPanel cardPanel;
+    private JPanel panelServicios;
+    private JPanel panelDatos;
+    private JPanel panelResumen;
+
+    // --- Datos temporales entre pasos ---
+    private String servicioSeleccionado = "";
+    private String nombreCliente = "";
+    private String telefonoCliente = "";
+    private String matriculaAuto = "";
+    private java.util.Date fechaSeleccionada = null;
+    private String horaSeleccionada = "";
+
+    // --- NUEVO: Para saber en qué paso estamos ---
+    private String currentStep = "SERVICIOS";
+
+    // --- Botones de navegación ---
+    private JButton btnAnterior, btnSiguiente, btnConfirmar;
+
+    // --- Etiquetas del resumen ---
+    private JLabel[] resumenLabels;
+
     // =======================================================================
-    // CLASE INTERNA: NeonBackgroundPanel (Fondo animado + Borde Neón Global Titilante SUAVE)
+    // CLASE INTERNA: NeonBackgroundPanel
     // =======================================================================
     private class NeonBackgroundPanel extends JPanel {
         private Color backgroundColor;
@@ -43,7 +67,6 @@ public class Turno extends JFrame {
         private List<Particle> particles;
         private final int NUM_PARTICLES = 100;
         
-        // --- Variables para el borde titilante global ---
         private Timer globalBlinkTimer;
         private boolean showGlobalNeonBorder = false;
 
@@ -54,7 +77,6 @@ public class Turno extends JFrame {
             particles = new ArrayList<>();
             initializeParticles(ANCHO_VENTANA, ALTO_VENTANA);
             
-            // Parpadeo más lento y suave: 800ms
             globalBlinkTimer = new Timer(800, e -> {
                 showGlobalNeonBorder = !showGlobalNeonBorder;
                 repaint();
@@ -87,7 +109,6 @@ public class Turno extends JFrame {
 
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             
-            // --- DIBUJAR REJILLA SUTIL Y PARTÍCULAS ---
             int spacing = 50; 
             Color gridColor = new Color(60, 60, 60, 20); 
             g2d.setColor(gridColor);
@@ -110,17 +131,14 @@ public class Turno extends JFrame {
                 g2d.fillOval(p.getX(), p.getY(), p.getSize(), p.getSize());
             }
 
-            // --- BORDE NEÓN DE LA VENTANA (Titilante y Sutil) ---
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)); 
             int width = getWidth();
             int height = getHeight();
 
-            // 1. Dibujar el Glow Fijo (muy sutil)
             g2d.setColor(new Color(COLOR_NEON_VERDE_OSCURO.getRed(), COLOR_NEON_VERDE_OSCURO.getGreen(), COLOR_NEON_VERDE_OSCURO.getBlue(), 50));
             g2d.setStroke(new BasicStroke(4)); 
             g2d.drawRect(0, 0, width - 1, height - 1);
             
-            // 2. Dibujar el Borde Titilante (fino y usando el color oscuro)
             if (showGlobalNeonBorder) {
                 g2d.setColor(COLOR_NEON_VERDE_OSCURO); 
                 g2d.setStroke(new BasicStroke(1)); 
@@ -159,122 +177,50 @@ public class Turno extends JFrame {
     }
 
     public Turno() {
-        setTitle("Agenda el Nuevo Turno - AUTO STORE");
+        setTitle("Registra el Turno");
         setSize(ANCHO_VENTANA, ALTO_VENTANA);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
 
-        // Inicializar panel principal con fondo animado (igual que ServiciosVentana)
         panelPrincipal = new NeonBackgroundPanel(COLOR_GRIS_CARBON, COLOR_NEON_VERDE);
         panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
 
-        // Contenedor de contenido
-        JPanel contentPanel = new JPanel();
-        contentPanel.setOpaque(false);
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(80, 30, 30, 30));
+        cardLayout = new CardLayout();
+        cardPanel = new JPanel(cardLayout);
+        cardPanel.setOpaque(false);
+        cardPanel.setBorder(BorderFactory.createEmptyBorder(80, 30, 30, 30));
 
-        // Título
-        JLabel titleLabel = new JLabel("Agenda el Nuevo Turno");
-        titleLabel.setFont(new Font("Bell MT", Font.BOLD, 28));
+        crearPanelServicios();
+        crearPanelDatos();
+        crearPanelResumen();
+
+        cardPanel.add(panelServicios, "SERVICIOS");
+        cardPanel.add(panelDatos, "DATOS");
+        cardPanel.add(panelResumen, "RESUMEN");
+
+        JPanel navPanel = crearBarraNavegacion();
+        navPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel titleLabel = new JLabel("Registra el Turno");
+        titleLabel.setFont(new Font("Impact", Font.BOLD, 28));
         titleLabel.setForeground(COLOR_NEON_VERDE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JSeparator separator = new JSeparator();
-        separator.setMaximumSize(new Dimension(300, 3));
-        separator.setForeground(COLOR_NEON_VERDE_CLARO);
-        separator.setBackground(COLOR_GRIS_CARBON);
-        separator.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel topContainer = new JPanel();
+        topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
+        topContainer.setOpaque(false);
+        topContainer.add(titleLabel);
+        topContainer.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JPanel titleContainer = new JPanel();
-        titleContainer.setLayout(new BoxLayout(titleContainer, BoxLayout.Y_AXIS));
-        titleContainer.setOpaque(false);
-        titleContainer.add(titleLabel);
-        titleContainer.add(Box.createRigidArea(new Dimension(0, 5)));
-        titleContainer.add(separator);
-        contentPanel.add(titleContainer);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 40)));
-
-        // Formulario
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new GridLayout(0, 1, 10, 10));
-        formPanel.setOpaque(false);
-        formPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        // Campo: Nombre Completo
-        txtNombre = createTextField("Nombre Completo del Cliente");
-        formPanel.add(txtNombre);
-
-        // Campo: Número de Teléfono
-        txtTelefono = createTextField("Número de Teléfono");
-        formPanel.add(txtTelefono);
-
-        // Campo: Matrícula del Auto
-        txtMatricula = createTextField("Matrícula del Auto");
-        formPanel.add(txtMatricula);
-
-        // Campo: Tipo de Servicio
-        String[] servicios = {"Audio", "Polarizado", "Ambos"};
-        servicioComboBox = new JComboBox<>(servicios);
-        servicioComboBox.setPreferredSize(new Dimension(200, 30));
-        servicioComboBox.setFont(new Font("Arial", Font.BOLD, 14));
-        servicioComboBox.setBackground(COLOR_GRIS_CARBON);
-        servicioComboBox.setForeground(Color.WHITE);
-        servicioComboBox.setBorder(BorderFactory.createLineBorder(COLOR_NEON_VERDE, 1));
-        formPanel.add(servicioComboBox);
-
-        // Fecha y Hora
-        JPanel dateHourPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        dateHourPanel.setOpaque(false);
-
-        // Selector de fecha
-        dateChooser = new JDateChooser();
-        dateChooser.setDateFormatString("dd/MM/yyyy");
-        dateChooser.setPreferredSize(new Dimension(150, 30));
-        dateChooser.getCalendarButton().setPreferredSize(new Dimension(25, 25));
-        dateChooser.getCalendarButton().setBackground(COLOR_NEON_VERDE);
-        dateChooser.getCalendarButton().setForeground(COLOR_GRIS_CARBON);
-        dateChooser.getCalendarButton().setFont(new Font("Arial", Font.BOLD, 12));
-        dateChooser.getDateEditor().getUiComponent().setFont(new Font("Arial", Font.PLAIN, 14));
-        dateChooser.setDate(Calendar.getInstance().getTime());
-
-        // Selector de hora (de 30 en 30 minutos, desde 9:30 hasta 22:00)
-        List<String> horasDisponibles = new ArrayList<>();
-        for (int hour = 9; hour <= 21; hour++) {
-            horasDisponibles.add(String.format("%02d:30", hour));
-            if (hour < 21) {
-                horasDisponibles.add(String.format("%02d:00", hour + 1));
-            }
-        }
-        // Añadir la última hora: 22:00
-        horasDisponibles.add("22:00");
-        
-        horaComboBox = new JComboBox<>(horasDisponibles.toArray(new String[0]));
-        horaComboBox.setPreferredSize(new Dimension(100, 30));
-        horaComboBox.setFont(new Font("Arial", Font.BOLD, 14));
-        horaComboBox.setBackground(COLOR_GRIS_CARBON);
-        horaComboBox.setForeground(Color.WHITE);
-        horaComboBox.setBorder(BorderFactory.createLineBorder(COLOR_NEON_VERDE, 1));
-
-        dateHourPanel.add(dateChooser);
-        dateHourPanel.add(horaComboBox);
-        formPanel.add(dateHourPanel);
-
-        contentPanel.add(formPanel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 30)));
-
-        // Botón CONFIRMAR (con el estilo de ServiciosVentana.java)
-        JButton btnConfirmar = createRoundedNeonButton("CONFIRMAR", e -> confirmarTurno());
-        btnConfirmar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        contentPanel.add(btnConfirmar);
-
-        panelPrincipal.add(contentPanel);
+        panelPrincipal.add(topContainer);
+        panelPrincipal.add(cardPanel);
+        panelPrincipal.add(Box.createRigidArea(new Dimension(0, 20)));
+        panelPrincipal.add(navPanel);
         add(panelPrincipal);
 
         setVisible(true);
 
-        // Timer de animación para las partículas (igual que en ServiciosVentana)
         Timer animationTimer = new Timer(30, e -> {
             if (panelPrincipal.getWidth() > 0 && panelPrincipal.getHeight() > 0) {
                 panelPrincipal.updateAnimations();
@@ -283,7 +229,6 @@ public class Turno extends JFrame {
         });
         animationTimer.start();
 
-        // Listener para redimensionar partículas
         this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -294,10 +239,250 @@ public class Turno extends JFrame {
         });
     }
 
+    // =======================================================================
+    // MÉTODOS PARA LOS 3 PASOS
+    // =======================================================================
+
+    private void crearPanelServicios() {
+        panelServicios = new JPanel();
+        panelServicios.setLayout(new BoxLayout(panelServicios, BoxLayout.Y_AXIS));
+        panelServicios.setOpaque(false);
+
+        JLabel title = new JLabel("Elige el tipo de Servicio");
+        title.setFont(new Font("Impact", Font.BOLD, 24));
+        title.setForeground(COLOR_NEON_VERDE);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String[] servicios = {"Servicios", "Audio", "Polarizado", "Ambos"};
+        servicioComboBox = new JComboBox<>(servicios);
+        servicioComboBox.setSelectedIndex(0);
+        servicioComboBox.setPreferredSize(new Dimension(200, 35));
+        servicioComboBox.setFont(new Font("Consolas", Font.BOLD, 16));
+        servicioComboBox.setBackground(COLOR_GRIS_CARBON);
+        servicioComboBox.setForeground(Color.WHITE);
+        servicioComboBox.setBorder(BorderFactory.createLineBorder(COLOR_NEON_VERDE, 1));
+        servicioComboBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        servicioComboBox.addActionListener(e -> {
+            if (servicioComboBox.getSelectedIndex() > 0) {
+                servicioComboBox.setForeground(COLOR_NEON_VERDE);
+            } else {
+                servicioComboBox.setForeground(Color.WHITE);
+            }
+        });
+
+        panelServicios.add(Box.createVerticalGlue());
+        panelServicios.add(title);
+        panelServicios.add(Box.createRigidArea(new Dimension(0, 20)));
+        panelServicios.add(servicioComboBox);
+        panelServicios.add(Box.createVerticalGlue());
+    }
+
+    private void crearPanelDatos() {
+        panelDatos = new JPanel();
+        panelDatos.setLayout(new BoxLayout(panelDatos, BoxLayout.Y_AXIS));
+        panelDatos.setOpaque(false);
+
+        JLabel title = new JLabel("Ingresa los Datos");
+        title.setFont(new Font("Impact", Font.BOLD, 24));
+        title.setForeground(COLOR_NEON_VERDE);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        txtNombre = createTextField("Nombre Completo");
+        txtTelefono = createTextField("Número de Teléfono");
+        txtMatricula = createTextField("Matrícula del Auto");
+
+        dateChooser = new JDateChooser();
+        dateChooser.setDateFormatString("dd/MM/yyyy");
+        dateChooser.setPreferredSize(new Dimension(150, 30));
+        dateChooser.getCalendarButton().setPreferredSize(new Dimension(25, 25));
+        dateChooser.getCalendarButton().setBackground(COLOR_NEON_VERDE);
+        dateChooser.getCalendarButton().setForeground(COLOR_GRIS_CARBON);
+        dateChooser.setDate(Calendar.getInstance().getTime());
+
+        dateChooser.getDateEditor().getUiComponent().setFont(new Font("Consolas", Font.BOLD, 14));
+        dateChooser.getDateEditor().getUiComponent().setForeground(Color.WHITE);
+        dateChooser.getDateEditor().getUiComponent().setBackground(COLOR_GRIS_CARBON);
+        dateChooser.getDateEditor().getUiComponent().setBorder(BorderFactory.createLineBorder(COLOR_NEON_VERDE, 1));
+
+        List<String> horas = new ArrayList<>();
+        for (int h = 9; h <= 21; h++) {
+            horas.add(String.format("%02d:30", h));
+            if (h < 21) horas.add(String.format("%02d:00", h + 1));
+        }
+        horas.add("22:00");
+        horaComboBox = new JComboBox<>(horas.toArray(new String[0]));
+        horaComboBox.setPreferredSize(new Dimension(100, 30));
+        horaComboBox.setFont(new Font("Consolas", Font.BOLD, 14));
+        horaComboBox.setBackground(COLOR_GRIS_CARBON);
+        horaComboBox.setForeground(Color.WHITE);
+        horaComboBox.setBorder(BorderFactory.createLineBorder(COLOR_NEON_VERDE, 1));
+
+        JPanel dateHourPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        dateHourPanel.setOpaque(false);
+        dateHourPanel.add(dateChooser);
+        dateHourPanel.add(horaComboBox);
+
+        panelDatos.add(Box.createVerticalGlue());
+        panelDatos.add(title);
+        panelDatos.add(Box.createRigidArea(new Dimension(0, 20)));
+        panelDatos.add(txtNombre);
+        panelDatos.add(Box.createRigidArea(new Dimension(0, 10)));
+        panelDatos.add(txtTelefono);
+        panelDatos.add(Box.createRigidArea(new Dimension(0, 10)));
+        panelDatos.add(txtMatricula);
+        panelDatos.add(Box.createRigidArea(new Dimension(0, 15)));
+        panelDatos.add(dateHourPanel);
+        panelDatos.add(Box.createVerticalGlue());
+    }
+
+    private void crearPanelResumen() {
+        panelResumen = new JPanel();
+        panelResumen.setLayout(new BoxLayout(panelResumen, BoxLayout.Y_AXIS));
+        panelResumen.setOpaque(false);
+
+        JLabel title = new JLabel("Resumen del Turno");
+        title.setFont(new Font("Impact", Font.BOLD, 24));
+        title.setForeground(COLOR_NEON_VERDE);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblServicio = new JLabel("Servicio: --");
+        lblServicio.setFont(new Font("Consolas", Font.PLAIN, 18));
+        lblServicio.setForeground(Color.WHITE);
+        lblServicio.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblNombre = new JLabel("Nombre: --");
+        lblNombre.setFont(new Font("Consolas", Font.PLAIN, 18));
+        lblNombre.setForeground(Color.WHITE);
+        lblNombre.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblTelefono = new JLabel("Teléfono: --");
+        lblTelefono.setFont(new Font("Consolas", Font.PLAIN, 18));
+        lblTelefono.setForeground(Color.WHITE);
+        lblTelefono.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblMatricula = new JLabel("Matrícula: --");
+        lblMatricula.setFont(new Font("Consolas", Font.PLAIN, 18));
+        lblMatricula.setForeground(Color.WHITE);
+        lblMatricula.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblFechaHora = new JLabel("Fecha y Hora: --");
+        lblFechaHora.setFont(new Font("Consolas", Font.PLAIN, 18));
+        lblFechaHora.setForeground(Color.WHITE);
+        lblFechaHora.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        resumenLabels = new JLabel[]{lblServicio, lblNombre, lblTelefono, lblMatricula, lblFechaHora};
+
+        panelResumen.add(Box.createVerticalGlue());
+        panelResumen.add(title);
+        panelResumen.add(Box.createRigidArea(new Dimension(0, 20)));
+        for (JLabel lbl : resumenLabels) {
+            panelResumen.add(lbl);
+            panelResumen.add(Box.createRigidArea(new Dimension(0, 8)));
+        }
+        panelResumen.add(Box.createVerticalGlue());
+    }
+
+    private JPanel crearBarraNavegacion() {
+        // 👇 Panel con altura fija para evitar corte
+        JPanel nav = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10)) {
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(600, 80); // 👈 Fuerza espacio suficiente
+            }
+        };
+        nav.setOpaque(false);
+
+        btnAnterior = createRoundedNeonButton("« Anterior", e -> navegarAtras());
+        btnSiguiente = createRoundedNeonButton("Siguiente »", e -> navegarAdelante());
+        btnConfirmar = createRoundedNeonButton("✅ Confirmar Turno", e -> confirmarTurno());
+
+        nav.add(btnAnterior);
+        nav.add(btnSiguiente);
+        nav.add(btnConfirmar);
+
+        btnAnterior.setVisible(false);
+        btnConfirmar.setVisible(false);
+
+        return nav;
+    }
+
+    private void navegarAdelante() {
+        if ("SERVICIOS".equals(currentStep)) {
+            servicioSeleccionado = (String) servicioComboBox.getSelectedItem();
+            if (servicioSeleccionado == null || servicioSeleccionado.trim().isEmpty() || "Servicios".equals(servicioSeleccionado)) {
+                JOptionPane.showMessageDialog(this, "Selecciona un tipo de servicio.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            cardLayout.show(cardPanel, "DATOS");
+            currentStep = "DATOS";
+            btnAnterior.setVisible(true);
+            btnSiguiente.setVisible(true);
+            btnSiguiente.setText("Siguiente »");
+            btnConfirmar.setVisible(false);
+        } else if ("DATOS".equals(currentStep)) {
+            nombreCliente = txtNombre.getText().trim();
+            telefonoCliente = txtTelefono.getText().trim();
+            matriculaAuto = txtMatricula.getText().trim();
+            fechaSeleccionada = dateChooser.getDate();
+            horaSeleccionada = (String) horaComboBox.getSelectedItem();
+
+            if (nombreCliente.isEmpty() || nombreCliente.equals("Nombre Completo")) {
+                JOptionPane.showMessageDialog(this, "Ingresa tu nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (telefonoCliente.isEmpty() || telefonoCliente.equals("Número de Teléfono")) {
+                JOptionPane.showMessageDialog(this, "Ingresa tu teléfono.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (matriculaAuto.isEmpty() || matriculaAuto.equals("Matrícula del Auto")) {
+                JOptionPane.showMessageDialog(this, "Ingresa la matrícula.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (fechaSeleccionada == null) {
+                JOptionPane.showMessageDialog(this, "Selecciona una fecha.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            actualizarResumen();
+            cardLayout.show(cardPanel, "RESUMEN");
+            currentStep = "RESUMEN";
+            btnSiguiente.setVisible(false);
+            btnConfirmar.setVisible(true);
+        }
+    }
+
+    private void navegarAtras() {
+        if ("DATOS".equals(currentStep)) {
+            cardLayout.show(cardPanel, "SERVICIOS");
+            currentStep = "SERVICIOS";
+            btnAnterior.setVisible(false);
+            btnSiguiente.setVisible(true);
+            btnConfirmar.setVisible(false);
+        } else if ("RESUMEN".equals(currentStep)) {
+            cardLayout.show(cardPanel, "DATOS");
+            currentStep = "DATOS";
+            btnSiguiente.setVisible(true);
+            btnConfirmar.setVisible(false);
+            btnAnterior.setVisible(true);
+        }
+    }
+
+    private void actualizarResumen() {
+        resumenLabels[0].setText("Servicio: " + servicioSeleccionado);
+        resumenLabels[1].setText("Nombre: " + nombreCliente);
+        resumenLabels[2].setText("Teléfono: " + telefonoCliente);
+        resumenLabels[3].setText("Matrícula: " + matriculaAuto);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        String fechaStr = fechaSeleccionada != null ? sdf.format(fechaSeleccionada) : "--";
+        resumenLabels[4].setText("Fecha y Hora: " + fechaStr + " a las " + horaSeleccionada);
+    }
+
     // Método auxiliar: crear campo de texto con estilo neón
     private JTextField createTextField(String placeholder) {
         JTextField field = new JTextField(20);
-        field.setFont(new Font("Arial", Font.BOLD, 16));
+        field.setFont(new Font("Consolas", Font.BOLD, 16));
         field.setForeground(Color.WHITE);
         field.setBackground(COLOR_GRIS_CARBON);
         field.setCaretColor(Color.WHITE);
@@ -321,16 +506,17 @@ public class Turno extends JFrame {
         return field;
     }
 
-    // Método auxiliar: crear botón redondeado neón (igual que en ServiciosVentana.java)
+    // Método auxiliar: crear botón redondeado neón
     private JButton createRoundedNeonButton(String text, ActionListener action) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Bell MT", Font.BOLD, 18));
+        button.setFont(new Font("Impact", Font.BOLD, 18));
         button.setForeground(COLOR_GRIS_CARBON);
         button.setBackground(COLOR_NEON_VERDE);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setOpaque(false);
-        button.setPreferredSize(new Dimension(300, 55));
+        // 👇 Reducido a 280 para que quepan dos botones
+        button.setPreferredSize(new Dimension(280, 55));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
 
@@ -342,10 +528,8 @@ public class Turno extends JFrame {
                 int width = c.getWidth();
                 int height = c.getHeight();
                 int arc = 25;
-                // 1. Dibujar el borde "glow" más grueso
                 g2.setColor(COLOR_NEON_VERDE_CLARO);
                 g2.fillRoundRect(0, 0, width, height, arc, arc);
-                // 2. Dibujar el fondo principal del botón más pequeño
                 g2.setColor(button.getBackground());
                 g2.fillRoundRect(2, 2, width - 4, height - 4, arc - 2, arc - 2);
                 g2.dispose();
@@ -370,56 +554,10 @@ public class Turno extends JFrame {
 
     // Método para confirmar turno
     private void confirmarTurno() {
-        String nombre = txtNombre.getText().trim();
-        String telefono = txtTelefono.getText().trim();
-        String matricula = txtMatricula.getText().trim();
-        java.util.Date selectedDate = dateChooser.getDate();
-        String horaSeleccionada = (String) horaComboBox.getSelectedItem();
-        String tipoServicio = (String) servicioComboBox.getSelectedItem();
-
-        // Validar campos
-        if (nombre.isEmpty() || nombre.equals("Nombre Completo del Cliente")) {
-            JOptionPane.showMessageDialog(this, "Por favor, ingresa tu nombre completo.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (telefono.isEmpty() || telefono.equals("Número de Teléfono")) {
-            JOptionPane.showMessageDialog(this, "Por favor, ingresa tu número de teléfono.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (matricula.isEmpty() || matricula.equals("Matrícula del Auto")) {
-            JOptionPane.showMessageDialog(this, "Por favor, ingresa la matrícula del auto.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (selectedDate == null) {
-            JOptionPane.showMessageDialog(this, "Por favor, selecciona una fecha.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Formatear fecha
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String fechaFormateada = sdf.format(selectedDate);
+        String fechaFormateada = sdf.format(fechaSeleccionada);
 
-        // Mostrar resumen
-        String resumen = String.format(
-            """
-            🔍 Resumen de Turno:
-            -------------------
-            Cliente: %s
-            Teléfono: %s
-            Matrícula: %s
-            Servicio: %s
-            Fecha: %s
-            Hora: %s
-            -------------------
-            ¿Confirmar este turno?
-            """,
-            nombre, telefono, matricula, tipoServicio, fechaFormateada, horaSeleccionada
-        );
-
-        int opcion = JOptionPane.showConfirmDialog(this, resumen, "Confirmar Turno", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (opcion == JOptionPane.YES_OPTION) {
-            guardarTurnoEnBD(nombre, telefono, matricula, tipoServicio, fechaFormateada, horaSeleccionada);
-        }
+        guardarTurnoEnBD(nombreCliente, telefonoCliente, matriculaAuto, servicioSeleccionado, fechaFormateada, horaSeleccionada);
     }
 
     // Método para guardar el turno en la base de datos
@@ -429,11 +567,10 @@ public class Turno extends JFrame {
         String contraseña = "";
 
         try {
-            // 👇 CARGAR EL DRIVER EXPLÍCITAMENTE (solución al error "No suitable driver")
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             try (Connection conn = DriverManager.getConnection(url, usuario, contraseña)) {
-                String sql = "INSERT INTO turnos (nombre, telefono, matricula, tipo_servicio, fecha, hora) VALUES (?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO turnos (nombre, telefono, matricula, tipoServicio, fecha, hora) VALUES (?, ?, ?, ?, ?, ?)";
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, nombre);
                 stmt.setString(2, telefono);
